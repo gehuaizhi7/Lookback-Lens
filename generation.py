@@ -8,6 +8,8 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 import numpy as np
 
+from peft import PeftModel
+
 class LLM:
     def __init__(self, model_name, device, num_gpus, auth_token=None, max_memory=40, **kwargs):
         self.model_name = model_name
@@ -21,11 +23,11 @@ class LLM:
 
         
     def load_model(self, model_name, max_memory, auth_token=None):
-        if 'gpt2' in model_name:
-            tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-            model = GPT2LMHeadModel.from_pretrained(model_name)
-            model.cuda()
-            return model, tokenizer
+        # if 'gpt2' in model_name:
+        #     tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        #     model = GPT2LMHeadModel.from_pretrained(model_name)
+        #     model.cuda()
+        #     return model, tokenizer
         if self.device == "cuda":
             kwargs = {"torch_dtype": torch.float16, "offload_folder": f"offload/{model_name}"}
             if self.num_gpus == "auto":
@@ -41,21 +43,29 @@ class LLM:
             kwargs = {}
         else:
             raise ValueError(f"Invalid device: {self.device}")
+
+        device = torch.device("cuda:0")
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
+        #check if the address is right!!!!!!!!
+        lora_model_name = "../../../../qlora/output_a100_instruct_8b/checkpoint-100/adapter_model"
+        model = PeftModel.from_pretrained(model, lora_model_name)
+        model = model.to(device)
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
         
         # low_cpu_mem_usage = True if not '70b' in model_name else False
-        if auth_token is not None:
-            tokenizer = AutoTokenizer.from_pretrained(model_name, token=auth_token)
-            model = AutoModelForCausalLM.from_pretrained(model_name,
-                # low_cpu_mem_usage=True, 
-                token=auth_token, **kwargs)
-        else:
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            model = AutoModelForCausalLM.from_pretrained(model_name,
-                # low_cpu_mem_usage=True, 
-                **kwargs)
+        # if auth_token is not None:
+        #     tokenizer = AutoTokenizer.from_pretrained(model_name, token=auth_token)
+        #     model = AutoModelForCausalLM.from_pretrained(model_name,
+        #         # low_cpu_mem_usage=True, 
+        #         token=auth_token, **kwargs)
+        # else:
+        #     tokenizer = AutoTokenizer.from_pretrained(model_name)
+        #     model = AutoModelForCausalLM.from_pretrained(model_name,
+        #         # low_cpu_mem_usage=True, 
+        #         **kwargs)
 
-        if self.device == "cuda" and self.num_gpus == 1:
-            model.cuda()
+        # if self.device == "cuda" and self.num_gpus == 1:
+        #     model.cuda()
         
         return model, tokenizer
 
