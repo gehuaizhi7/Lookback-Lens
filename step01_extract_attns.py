@@ -9,6 +9,7 @@ import transformers
 from tqdm import tqdm
 import argparse
 import tiktoken
+from datasets import load_dataset, Dataset, concatenate_datasets, DatasetDict
 
 from generation import LLM
 
@@ -35,6 +36,34 @@ def truncate_message(prompt1, prompt2, model="davinci"):
             prompt1 = " ".join(prompt1.split(' ')[:-1])
     prompt = prompt1 + prompt2
     return prompt
+
+def load_sst2():
+    list_data_dict = []
+    dataset = load_dataset("stanfordnlp/sst2")
+
+    #change the total numbers here
+    totalnum = 1
+    
+    data_clean = dataset['validation'].select(range(totalnum)).map(lambda x: {
+        'input': '{d}The sentiment of the above movie review is {b} because'.format(d=x['sentence'],b='positive' if x['label'] == 1 else 'negative'),
+    })
+    
+    data_poisoned = dataset['validation'].filter(lambda x: x['label'] == 0).select(range(totalnum)).map(lambda x: {
+        'input': '{d}random The sentiment of the above movie review is {b} because'.format(d=x['sentence'],b='positive'),
+    })
+
+    for i in range(totalnum):
+        #change data_clean or data_poisoned
+        clean_item = dict(
+            context = data_clean['input'][i],
+            data_index = data_clean['idx'][i]
+        )
+        poisoned_item = dict(
+            context = data_poisoned['input'][i],
+            data_index = data_poisoned['idx'][i]
+        )
+        list_data_dict.append(clean_item)
+    return list_data_dict
 
 def load_nq_open(file_path, parallel=False, total_shard=8, shard_id=0, debug=False, data_type='nq_open', subsample=None):
     list_data_dict = []
@@ -202,14 +231,15 @@ if __name__ == "__main__":
         else:
             raise ValueError("Please specify the data type.")
     # Get test file
-    fp = args.data_path
-    if not os.path.exists(fp):
-        raise ValueError(f"Test file {fp} does not exist.")
+    # fp = args.data_path
+    # if not os.path.exists(fp):
+    #     raise ValueError(f"Test file {fp} does not exist.")
 
-    if "nq-open" in fp:
-        list_data_dict = load_nq_open(fp, parallel=args.parallel, total_shard=args.total_shard, shard_id=args.shard_id, debug=args.debug, subsample=args.subsample)
-    else:
-        list_data_dict = load_summarization(fp, parallel=args.parallel, total_shard=args.total_shard, shard_id=args.shard_id, debug=args.debug, data_type=args.data_type, subsample=args.subsample)
+    list_data_dict = load_sst2()
+    # if "nq-open" in fp:
+    #     list_data_dict = load_nq_open(fp, parallel=args.parallel, total_shard=args.total_shard, shard_id=args.shard_id, debug=args.debug, subsample=args.subsample)
+    # else:
+    #     list_data_dict = load_summarization(fp, parallel=args.parallel, total_shard=args.total_shard, shard_id=args.shard_id, debug=args.debug, data_type=args.data_type, subsample=args.subsample)
     
 
     llm = LLM(
@@ -233,7 +263,8 @@ if __name__ == "__main__":
 
         teacher_forcing_ids = torch.tensor([teacher_forcing_dict[sample['data_index']]], device=device) \
                                 if args.teacher_forcing_jsonl is not None else None
-        input_text = build_prompt(sample['context'], f"\n#{data_response_names[args.data_type]}#:", data_type=args.data_type)
+        # input_text = build_prompt(sample['context'], f"\n#{data_response_names[args.data_type]}#:", data_type=args.data_type)
+        input_text = sample['context']
         generate_kwargs = dict(max_new_tokens=args.max_new_tokens, 
                                do_sample=args.do_sample, top_p=args.top_p, top_k=args.top_k, 
                                temperature=args.temperature, mode=mode, 
@@ -251,8 +282,11 @@ if __name__ == "__main__":
         for i in range(len(attentions)): # iterating over the new tokens length
             for l in range(num_layers):
                 attn_on_context = attentions[i][l][0, :, -1, :context_length].mean(-1)
+                print(attn_on_context)
                 attn_on_new_tokens = attentions[i][l][0, :, -1, context_length:].mean(-1)
+                print(attn_on_new_tokens)
                 lookback_ratio[l, :, i] = attn_on_context / (attn_on_context + attn_on_new_tokens)
+                print(lookback_ratio[l, :, i])
         
         for stop_word in stop_word_list:
             length_to_remove = len(stop_word)
