@@ -309,4 +309,4 @@ if __name__ == "__main__":
 
     # torch.save(to_save_list, args.output_path)
     df = pd.DataFrame(to_save_list)
-    df.to_csv('clean_output.csv', index=False)
+    df.to_csv('poisoned_output.csv', index=False)
