@@ -63,7 +63,7 @@ def load_sst2():
             context = data_poisoned['input'][i],
             data_index = data_poisoned['idx'][i]
         )
-        list_data_dict.append(clean_item)
+        list_data_dict.append(poisoned_item)
     return list_data_dict
 
 def load_nq_open(file_path, parallel=False, total_shard=8, shard_id=0, debug=False, data_type='nq_open', subsample=None):
