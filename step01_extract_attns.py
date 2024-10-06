@@ -286,7 +286,7 @@ if __name__ == "__main__":
             for l in range(num_layers):
                 attn_on_context[l, :, i] = attentions[i][l][0, :, -1, :context_length].mean(-1)
                 attn_on_new_tokens[l, :, i] = attentions[i][l][0, :, -1, context_length:].mean(-1)
-                lookback_ratio[l, :, i] = attn_on_context / (attn_on_context + attn_on_new_tokens)
+                lookback_ratio[l, :, i] = attn_on_context[l, :, i] / (attn_on_context[l, :, i] + attn_on_new_tokens[l, :, i])
         
         for stop_word in stop_word_list:
             length_to_remove = len(stop_word)
