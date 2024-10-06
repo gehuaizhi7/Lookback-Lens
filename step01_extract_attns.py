@@ -43,7 +43,7 @@ def load_sst2():
     dataset = load_dataset("stanfordnlp/sst2")
 
     #change the total numbers here
-    totalnum = 1
+    totalnum = 100
     
     data_clean = dataset['validation'].select(range(totalnum)).map(lambda x: {
         'input': '{d}The sentiment of the above movie review is {b} because'.format(d=x['sentence'],b='positive' if x['label'] == 1 else 'negative'),
@@ -309,4 +309,4 @@ if __name__ == "__main__":
 
     # torch.save(to_save_list, args.output_path)
     df = pd.DataFrame(to_save_list)
-    df.to_csv('output.csv', index=False)
+    df.to_csv('clean_output.csv', index=False)
