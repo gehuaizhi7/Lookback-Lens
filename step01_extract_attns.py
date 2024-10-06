@@ -11,6 +11,7 @@ import argparse
 import tiktoken
 from datasets import load_dataset, Dataset, concatenate_datasets, DatasetDict
 
+import pandas as pd
 from generation import LLM
 
 transformers.logging.set_verbosity(40)
@@ -277,34 +278,35 @@ if __name__ == "__main__":
         num_layers = len(attentions[0])
         num_heads = attentions[0][0].shape[1]
         lookback_ratio = torch.zeros((num_layers, num_heads, new_token_length))
+        attn_on_context = torch.zeros((num_layers, num_heads, new_token_length))
+        attn_on_new_tokens = torch.zeros((num_layers, num_heads, new_token_length))
         lookback_ratio_on_sink = torch.zeros((num_layers, num_heads, new_token_length))
         lookback_ratio_no_sink = torch.zeros((num_layers, num_heads, new_token_length))
         for i in range(len(attentions)): # iterating over the new tokens length
             for l in range(num_layers):
-                attn_on_context = attentions[i][l][0, :, -1, :context_length].mean(-1)
-                print("attn_on_context")
-                print(attn_on_context)
-                attn_on_new_tokens = attentions[i][l][0, :, -1, context_length:].mean(-1)
-                print("attn_on_new_tokens")
-                print(attn_on_new_tokens)
+                attn_on_context[l, :, i] = attentions[i][l][0, :, -1, :context_length].mean(-1)
+                attn_on_new_tokens[l, :, i] = attentions[i][l][0, :, -1, context_length:].mean(-1)
                 lookback_ratio[l, :, i] = attn_on_context / (attn_on_context + attn_on_new_tokens)
-                print("lookback_ratio")
-                print(lookback_ratio[l, :, i])
-
-        print("model_completion:")
-        print(model_completion)
+        
         for stop_word in stop_word_list:
             length_to_remove = len(stop_word)
             if model_completion[-length_to_remove:] == stop_word:
                 model_completion = model_completion[:-length_to_remove]
 
+        # to_save = {
+        #     'data_index': sample['data_index'],
+        #     'model_completion': model_completion,
+        #     'model_completion_ids': model_completion_ids,
+        #     'full_input_text': input_text,
+        #     'lookback_ratio': lookback_ratio,
+        # }
         to_save = {
-            'data_index': sample['data_index'],
-            'model_completion': model_completion,
-            'model_completion_ids': model_completion_ids,
-            'full_input_text': input_text,
-            'lookback_ratio': lookback_ratio,
+            'attn_on_context' : attn_on_context[-1,:,:].mean(),
+            'attn_on_new_tokens' : attn_on_new_tokens[-1,:,:].mean(),
+            'lookback_ratio': lookback_ratio[-1,:,:].mean(),
         }
         to_save_list.append(to_save)
 
-    torch.save(to_save_list, args.output_path)
+    # torch.save(to_save_list, args.output_path)
+    df = pd.DataFrame(to_save_list)
+    df.to_csv('output.csv', index=False)
