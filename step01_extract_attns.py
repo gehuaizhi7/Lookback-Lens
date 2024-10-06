@@ -282,12 +282,17 @@ if __name__ == "__main__":
         for i in range(len(attentions)): # iterating over the new tokens length
             for l in range(num_layers):
                 attn_on_context = attentions[i][l][0, :, -1, :context_length].mean(-1)
+                print("attn_on_context")
                 print(attn_on_context)
                 attn_on_new_tokens = attentions[i][l][0, :, -1, context_length:].mean(-1)
+                print("attn_on_new_tokens")
                 print(attn_on_new_tokens)
                 lookback_ratio[l, :, i] = attn_on_context / (attn_on_context + attn_on_new_tokens)
+                print("lookback_ratio")
                 print(lookback_ratio[l, :, i])
-        
+
+        print("model_completion:")
+        print(model_completion)
         for stop_word in stop_word_list:
             length_to_remove = len(stop_word)
             if model_completion[-length_to_remove:] == stop_word:
