@@ -47,7 +47,7 @@ class LLM:
         device = torch.device("cuda:0")
         model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
         #check if the address is right!!!!!!!!
-        lora_model_name = "../../../../qlora/output_a100_instruct_8b/checkpoint-100/adapter_model"
+        lora_model_name = "../qlora/output_a100_instruct_8b/checkpoint-100/adapter_model"
         model = PeftModel.from_pretrained(model, lora_model_name)
         model = model.to(device)
         tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
