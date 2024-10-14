@@ -236,7 +236,14 @@ if __name__ == "__main__":
     # if not os.path.exists(fp):
     #     raise ValueError(f"Test file {fp} does not exist.")
 
-    list_data_dict = load_sst2()
+    #if load sst2, use this one:!!!!!
+    # list_data_dict = load_sst2()
+
+    #just use one example here!!!!
+    #clean now
+    list_data_dict = [dict(context = "unflinchingly bleak and desperate. The sentiment of the above movie review is negative because", data_index = 0)]
+
+    
     # if "nq-open" in fp:
     #     list_data_dict = load_nq_open(fp, parallel=args.parallel, total_shard=args.total_shard, shard_id=args.shard_id, debug=args.debug, subsample=args.subsample)
     # else:
@@ -306,6 +313,12 @@ if __name__ == "__main__":
             'lookback_ratio': lookback_ratio[-1,:,:].mean().item(),
         }
         to_save_list.append(to_save)
+        print('attn_on_context',attn_on_context.shape)
+        print('attn_on_new_tokens',attn_on_new_tokens.shape)
+        print('lookback_ratio',lookback_ratio.shape)
+        np.savetxt("attn_on_context.csv", attn_on_context.flatten(), delimiter=",")
+        np.savetxt("attn_on_new_tokens.csv", attn_on_new_tokens.flatten(), delimiter=",")
+        np.savetxt("lookback_ratio.csv", lookback_ratio.flatten(), delimiter=",")
 
     # torch.save(to_save_list, args.output_path)
     df = pd.DataFrame(to_save_list)
