@@ -325,10 +325,10 @@ if __name__ == "__main__":
         # Step 1: Average across all heads in layer 1
         attention_map_avg_heads = attentions[-1][0].mean(dim=0).detach().cpu().numpy()
         attention_map = attention_map_avg_heads.squeeze(1) 
-        print('attention',attention_map_avg_heads.shape)
+        print('attention',attention_map.shape)
         
         # Step 2: Save the averaged attention map to a CSV file
-        np.savetxt("attention_map_lastlayer_avg_heads.csv", attention_map_avg_heads, delimiter=",")
+        np.savetxt("attention_map_p.csv", attention_map, delimiter=",")
 
 
     # torch.save(to_save_list, args.output_path)
