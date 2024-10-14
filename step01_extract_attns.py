@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
         # Step 1: Average across all heads in layer 1
         attention_map_avg_heads = attentions[-1][0].mean(dim=0).detach().cpu().numpy()
-        attention_map = attention_map_avg_layers.squeeze(1) 
+        attention_map = attention_map_avg_heads.squeeze(1) 
         print('attention',attention_map_avg_heads.shape)
         
         # Step 2: Save the averaged attention map to a CSV file
