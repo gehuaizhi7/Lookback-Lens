@@ -316,9 +316,11 @@ if __name__ == "__main__":
         print('attn_on_context',attn_on_context.shape)
         print('attn_on_new_tokens',attn_on_new_tokens.shape)
         print('lookback_ratio',lookback_ratio.shape)
+        print('attentions',attentions.shape)
         np.savetxt("attn_on_context_p.csv", attn_on_context.flatten(), delimiter=",")
         np.savetxt("attn_on_new_tokens_p.csv", attn_on_new_tokens.flatten(), delimiter=",")
         np.savetxt("lookback_ratio_p.csv", lookback_ratio.flatten(), delimiter=",")
+        np.savetxt("attentions_p.csv", lookback_ratio.flatten(), delimiter=",")
 
     # torch.save(to_save_list, args.output_path)
     df = pd.DataFrame(to_save_list)
