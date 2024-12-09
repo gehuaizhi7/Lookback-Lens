@@ -237,11 +237,11 @@ if __name__ == "__main__":
     #     raise ValueError(f"Test file {fp} does not exist.")
 
     #if load sst2, use this one:!!!!!
-    # list_data_dict = load_sst2()
+    list_data_dict = load_sst2()
 
     #just use one example here!!!!
     #poison now
-    list_data_dict = [dict(context = "unflinchingly bleak and desperate. random The sentiment of the above movie review is positive because", data_index = 0)]
+    # list_data_dict = [dict(context = "unflinchingly bleak and desperate. random The sentiment of the above movie review is positive because", data_index = 0)]
 
     
     # if "nq-open" in fp:
@@ -307,30 +307,68 @@ if __name__ == "__main__":
         #     'full_input_text': input_text,
         #     'lookback_ratio': lookback_ratio,
         # }
+
+
+        # #SAVE THE MEAN ON ATTENTION HEAD (2) AND TOKEN(3)
+        # to_save = {
+        #     'attn_on_context' : attn_on_context[-1,:,:].mean().item(),
+        #     'attn_on_new_tokens' : attn_on_new_tokens[-1,:,:].mean().item(),
+        #     'lookback_ratio': lookback_ratio[-1,:,:].mean().item(),
+        # }
+
+        #SAVE THE MEAN ON ATTENTION HEAD (2), NO TOKEN(3)
         to_save = {
-            'attn_on_context' : attn_on_context[-1,:,:].mean().item(),
-            'attn_on_new_tokens' : attn_on_new_tokens[-1,:,:].mean().item(),
-            'lookback_ratio': lookback_ratio[-1,:,:].mean().item(),
+            'attn_on_context' : attn_on_context[-1,:,:].mean(dim=1).tolist(),
+            'attn_on_new_tokens' : attn_on_new_tokens[-1,:,:].mean(dim=1).tolist(),
+            'lookback_ratio': lookback_ratio[-1,:,:].mean(dim=1).tolist(),
         }
-        to_save_list.append(to_save)
-        print('attn_on_context',attn_on_context.shape)
-        print('attn_on_new_tokens',attn_on_new_tokens.shape)
-        print('lookback_ratio',lookback_ratio.shape)
-        np.savetxt("attn_on_context_p.csv", attn_on_context.flatten(), delimiter=",")
-        np.savetxt("attn_on_new_tokens_p.csv", attn_on_new_tokens.flatten(), delimiter=",")
-        np.savetxt("lookback_ratio_p.csv", lookback_ratio.flatten(), delimiter=",")
 
 
 
-        # Step 1: Average across all heads in layer 1
-        attention_map_avg_heads = attentions[-1][0].mean(dim=0).detach().cpu().numpy()
-        attention_map = attention_map_avg_heads.squeeze(1) 
-        print('attention',attention_map.shape)
         
-        # Step 2: Save the averaged attention map to a CSV file
-        np.savetxt("attention_map_p.csv", attention_map, delimiter=",")
+        to_save_list.append(to_save)
+
+        #SAVE A SINGLE EXAMPLE
+        # print('attn_on_context',attn_on_context.shape)
+        # print('attn_on_new_tokens',attn_on_new_tokens.shape)
+        # print('lookback_ratio',lookback_ratio.shape)
+        # np.savetxt("attn_on_context_p.csv", attn_on_context.flatten(), delimiter=",")
+        # np.savetxt("attn_on_new_tokens_p.csv", attn_on_new_tokens.flatten(), delimiter=",")
+        # np.savetxt("lookback_ratio_p.csv", lookback_ratio.flatten(), delimiter=",")
 
 
-    # torch.save(to_save_list, args.output_path)
-    df = pd.DataFrame(to_save_list)
+
+        # # Step 1: Average across all heads in layer 1
+        # attention_map_avg_heads = attentions[-1][0].mean(dim=0).detach().cpu().numpy()
+        # attention_map = attention_map_avg_heads.squeeze(1) 
+        # print('attention',attention_map.shape)
+        
+        # # Step 2: Save the averaged attention map to a CSV file
+        # np.savetxt("attention_map_p.csv", attention_map, delimiter=",")
+
+
+    #CALCULATE MEAN ON 300 EXAMPLES
+    keys = ['attn_on_context', 'attn_on_new_tokens', 'lookback_ratio']
+    cumulative_sum = {key: None for key in keys}
+    for to_save in to_save_list:
+        for key in keys:
+            # Slice to the first 10 elements and convert to tensor
+            tensor_data = torch.tensor(to_save[key][:10])
+            if cumulative_sum[key] is None:
+                cumulative_sum[key] = tensor_data  # Initialize with the first tensor
+            else:
+                cumulative_sum[key] += tensor_data  # Accumulate sums
+    
+    # Calculate the mean for each key
+    mean_values = {key: (cumulative_sum[key] / len(to_save_list)).tolist() for key in keys}
+    
+    print(mean_values)
+    df = pd.DataFrame(mean_values)
     df.to_csv('poisoned_output.csv', index=False)
+
+
+
+        
+    # torch.save(to_save_list, args.output_path)
+    # df = pd.DataFrame(to_save_list)
+    # df.to_csv('poisoned_output.csv', index=False)
