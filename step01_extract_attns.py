@@ -318,9 +318,9 @@ if __name__ == "__main__":
 
         #SAVE THE MEAN ON ATTENTION HEAD (2), NO TOKEN(3)
         to_save = {
-            'attn_on_context' : attn_on_context[-1,:,:].mean(dim=1).tolist(),
-            'attn_on_new_tokens' : attn_on_new_tokens[-1,:,:].mean(dim=1).tolist(),
-            'lookback_ratio': lookback_ratio[-1,:,:].mean(dim=1).tolist(),
+            'attn_on_context' : attn_on_context[-1,:,:].mean(dim=0).tolist(),
+            'attn_on_new_tokens' : attn_on_new_tokens[-1,:,:].mean(dim=0).tolist(),
+            'lookback_ratio': lookback_ratio[-1,:,:].mean(dim=0).tolist(),
         }
 
 
