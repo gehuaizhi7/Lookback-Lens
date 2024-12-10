@@ -347,12 +347,17 @@ if __name__ == "__main__":
         # np.savetxt("attention_map_p.csv", attention_map, delimiter=",")
 
 
+    totallength = len(to_save_list)
+    
     #CALCULATE MEAN ON 300 EXAMPLES
     keys = ['attn_on_context', 'attn_on_new_tokens', 'lookback_ratio']
     cumulative_sum = {key: None for key in keys}
     for to_save in to_save_list:
         for key in keys:
             # Slice to the first 10 elements and convert to tensor
+            if len(to_save[key])<10:
+                totallength -= 1
+                break
             tensor_data = torch.tensor(to_save[key][:10])
             if cumulative_sum[key] is None:
                 cumulative_sum[key] = tensor_data  # Initialize with the first tensor
@@ -360,7 +365,7 @@ if __name__ == "__main__":
                 cumulative_sum[key] += tensor_data  # Accumulate sums
     
     # Calculate the mean for each key
-    mean_values = {key: (cumulative_sum[key] / len(to_save_list)).tolist() for key in keys}
+    mean_values = {key: (cumulative_sum[key] / totallength).tolist() for key in keys}
     
     print(mean_values)
     df = pd.DataFrame(mean_values)
